@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server'; // your server-side Supabase client
+import { createClient } from '@/utils/supabase/server.js'; // your server-side Supabase client
 
 export async function GET(request) {
     try {

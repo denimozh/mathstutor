@@ -16,7 +16,7 @@ const Sidebar = () => {
     <div className='h-full flex flex-col p-4 bg-slate-100 w-full transition-all duration-300'>
       {/* Brand name (hidden on iPad/smaller) */}
       <p className='hidden 2xl:block text-2xl xl:text-4xl mb-4'>
-        <span className='text-violet-500'>Tutor</span>AI
+        <span className='text-violet-500'>Maths</span>Tutor
       </p>
       <div className='hidden 2xl:block border-b border-slate-200 mb-4'></div>
       <div className='flex flex-col justify-between h-full pt-6'>

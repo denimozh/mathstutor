@@ -1,34 +1,64 @@
 "use client"
 
 import React, { useState } from "react";
+import { FaCheck, FaTimes } from "react-icons/fa";
 
-// Mock data for past activities
+// Mock data for past activities matching the dashboard mockup
 const mockActivities = [
-  { id: 1, activity: "Asking for help", date: "2025-10-25", user: "Alice" },
-  { id: 2, activity: "Sending a question", date: "2025-10-24", user: "Bob" },
-  { id: 3, activity: "Creating a worksheet", date: "2025-10-23", user: "Charlie" },
-  { id: 4, activity: "Completing a worksheet", date: "2025-10-22", user: "Dana" },
-  { id: 5, activity: "Asking for help", date: "2025-10-21", user: "Eve" },
-  { id: 6, activity: "Sending a question", date: "2025-10-20", user: "Frank" },
-  { id: 7, activity: "Creating a worksheet", date: "2025-10-19", user: "Grace" },
-  { id: 8, activity: "Completing a worksheet", date: "2025-10-18", user: "Hank" },
+  { 
+    id: 1, 
+    date: "Today, 2:34 PM", 
+    activity: "Solved question", 
+    topic: "Integration by Parts", 
+    result: "correct",
+    time: "3m 24s"
+  },
+  { 
+    id: 2, 
+    date: "Today, 2:28 PM", 
+    activity: "Solved question", 
+    topic: "Chain Rule", 
+    result: "incorrect",
+    time: "5m 12s"
+  },
+  { 
+    id: 3, 
+    date: "Yesterday, 4:15 PM", 
+    activity: "Generated worksheet", 
+    topic: "Trigonometric Identities", 
+    result: "completed",
+    time: "25m"
+  },
+  { 
+    id: 4, 
+    date: "Yesterday, 3:45 PM", 
+    activity: "Deep work session", 
+    topic: "Mixed Topics", 
+    result: "completed",
+    time: "45m"
+  },
+  { 
+    id: 5, 
+    date: "2 days ago, 5:20 PM", 
+    activity: "Solved question", 
+    topic: "Differentiation", 
+    result: "correct",
+    time: "2m 15s"
+  },
+  { 
+    id: 6, 
+    date: "2 days ago, 4:50 PM", 
+    activity: "Solved question", 
+    topic: "Algebra", 
+    result: "incorrect",
+    time: "8m 30s"
+  },
 ];
 
 const PastActivitiesTable = () => {
-  const [activities, setActivities] = useState(mockActivities);
-  const [sortOrder, setSortOrder] = useState("asc");
+  const [activities] = useState(mockActivities);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 3;
-
-  // Sorting by date
-  const handleSort = () => {
-    const sorted = [...activities].sort((a, b) => {
-      if (sortOrder === "asc") return new Date(a.date) - new Date(b.date);
-      else return new Date(b.date) - new Date(a.date);
-    });
-    setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    setActivities(sorted);
-  };
+  const itemsPerPage = 4;
 
   // Pagination
   const totalPages = Math.ceil(activities.length / itemsPerPage);
@@ -37,47 +67,92 @@ const PastActivitiesTable = () => {
     currentPage * itemsPerPage
   );
 
+  const getResultColor = (result) => {
+    switch(result) {
+      case 'correct':
+        return 'text-emerald-600';
+      case 'incorrect':
+        return 'text-rose-600';
+      default:
+        return 'text-gray-600';
+    }
+  };
+
+  const getResultIcon = (result) => {
+    switch(result) {
+      case 'correct':
+        return <FaCheck size={16} className="text-emerald-600" />;
+      case 'incorrect':
+        return <FaTimes size={16} className="text-rose-600" />;
+      default:
+        return null;
+    }
+  };
+
   return (
-    <div className="">
+    <div className="w-full">
       {/* Table */}
-      <table className="min-w-full border border-gray-300">
-        <thead>
-          <tr className="bg-violet-300">
-            <th
-              className="border px-4 py-2 text-left cursor-pointer"
-              onClick={handleSort}
-            >
-              Date {sortOrder === "asc" ? "▲" : "▼"}
-            </th>
-            <th className="border px-4 py-2 text-left">Activity</th>
-            <th className="border px-4 py-2 text-left">Topic</th>
-          </tr>
-        </thead>
-        <tbody>
-          {paginatedActivities.map((item) => (
-            <tr key={item.id} className="hover:bg-violet-100">
-              <td className="border px-4 py-2">{item.id}</td>
-              <td className="border px-4 py-2">{item.activity}</td>
-              <td className="border px-4 py-2">{item.date}</td>
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                Time
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                Activity
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                Topic
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                Result
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {paginatedActivities.map((item) => (
+              <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                <td className="px-6 py-4 text-sm text-gray-600">
+                  {item.date}
+                </td>
+                <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                  {item.activity}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-700">
+                  {item.topic}
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-2">
+                    {getResultIcon(item.result)}
+                    <span className={`text-sm font-medium ${getResultColor(item.result)}`}>
+                      {item.result}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      ({item.time})
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {/* Pagination controls */}
-      <div className="mt-4 flex gap-2">
+      <div className="mt-4 flex items-center justify-between">
         <button
-          className="px-3 py-1 border rounded disabled:opacity-50"
+          className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
           disabled={currentPage === 1}
         >
           Previous
         </button>
-        <span className="px-2 py-1">
+        <span className="text-sm text-gray-600">
           Page {currentPage} of {totalPages}
         </span>
         <button
-          className="px-3 py-1 border rounded disabled:opacity-50"
+          className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
           disabled={currentPage === totalPages}
         >

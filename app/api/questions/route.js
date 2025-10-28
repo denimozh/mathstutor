@@ -1,15 +1,37 @@
 import { createClient } from "@/utils/supabase/server.js";
-
 export async function GET(request) {
     try {
         const supabase = await createClient();
-        const { data, error } = (await supabase).from('questions').select('*');
+        
+        // Get authenticated user
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+            return Response.json(
+                { success: false, message: 'User not authenticated' },
+                { status: 401 }
+            );
+        }
+        
+        // Use RPC function to get questions
+        const { data, error } = await supabase.rpc('get_user_questions', {
+            p_user_id: user.id,
+            p_limit: 100,  // or whatever limit you want
+            p_offset: 0
+        });
+        
         if (error) throw error;
-        return Response.json({ success: true, data });
+        
+        return Response.json({ 
+            success: true, 
+            data: data || [] 
+        });
     } catch (error) {
-        return Response.json({ success: false, message: error.message }, { status: 500 });
+        return Response.json({ 
+            success: false, 
+            message: error.message 
+        }, { status: 500 });
     }
-}
+};
 
 export async function POST(request) {
   try {

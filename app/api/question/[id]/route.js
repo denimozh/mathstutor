@@ -3,37 +3,59 @@ import { createClient } from "@/utils/supabase/server.js";
 // GET - Fetch a specific question by ID
 export async function GET(request, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const supabase = await createClient();
 
     // Verify user is authenticated
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) throw new Error(userError?.message || 'User not authenticated');
-
-    // Use RPC function to get the question
-    const { data, error } = await supabase.rpc('get_question', {
-      p_question_id: id
-    });
-
-    if (error) throw error;
-
-    if (!data || data.length === 0) {
+    if (userError || !user) {
       return Response.json(
-        { success: false, message: 'Question not found' },
-        { status: 404 }
+        { success: false, message: 'User not authenticated' },
+        { status: 401 }
       );
     }
 
-    // Verify the question belongs to the authenticated user
-    if (data[0].user_id !== user.id) {
+    // Add this right after getting the user
+    console.log('🔐 Testing auth.uid() in database...');
+    const { data: authTest } = await supabase.rpc('get_current_user_id');
+    console.log('🔐 auth.uid() from database:', authTest);
+
+    console.log('🔍 Fetching question ID:', id);
+    console.log('👤 User ID:', user.id);
+
+    // First, check if question exists at all (without user filter)
+    const { data: checkData, error: checkError } = await supabase
+      .from('questions')
+      .select('id, user_id')
+      .eq('id', id);
+
+    console.log('📋 Question exists check:', checkData);
+
+    // Use direct query - remove .single() to avoid error when not found
+    const { data, error } = await supabase
+      .from('questions')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', user.id);
+
+    console.log('📊 Query result:', data);
+    console.log('❌ Query error:', error);
+
+    if (error) {
+      console.error('Database error:', error);
+      throw error;
+    }
+
+    if (!data || data.length === 0) {
       return Response.json(
-        { success: false, message: 'Unauthorized' },
-        { status: 403 }
+        { success: false, message: 'Question not found or access denied' },
+        { status: 404 }
       );
     }
 
     return Response.json({ success: true, data: data[0] });
   } catch (error) {
+    console.error('GET question error:', error);
     return Response.json(
       { success: false, message: error.message },
       { status: 500 }

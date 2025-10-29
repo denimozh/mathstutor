@@ -1,64 +1,32 @@
-"use client"
+"use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FaCheck, FaTimes } from "react-icons/fa";
 
-// Mock data for past activities matching the dashboard mockup
-const mockActivities = [
-  { 
-    id: 1, 
-    date: "Today, 2:34 PM", 
-    activity: "Solved question", 
-    topic: "Integration by Parts", 
-    result: "correct",
-    time: "3m 24s"
-  },
-  { 
-    id: 2, 
-    date: "Today, 2:28 PM", 
-    activity: "Solved question", 
-    topic: "Chain Rule", 
-    result: "incorrect",
-    time: "5m 12s"
-  },
-  { 
-    id: 3, 
-    date: "Yesterday, 4:15 PM", 
-    activity: "Generated worksheet", 
-    topic: "Trigonometric Identities", 
-    result: "completed",
-    time: "25m"
-  },
-  { 
-    id: 4, 
-    date: "Yesterday, 3:45 PM", 
-    activity: "Deep work session", 
-    topic: "Mixed Topics", 
-    result: "completed",
-    time: "45m"
-  },
-  { 
-    id: 5, 
-    date: "2 days ago, 5:20 PM", 
-    activity: "Solved question", 
-    topic: "Differentiation", 
-    result: "correct",
-    time: "2m 15s"
-  },
-  { 
-    id: 6, 
-    date: "2 days ago, 4:50 PM", 
-    activity: "Solved question", 
-    topic: "Algebra", 
-    result: "incorrect",
-    time: "8m 30s"
-  },
-];
-
 const PastActivitiesTable = () => {
-  const [activities] = useState(mockActivities);
+  const [activities, setActivities] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 4;
+
+  useEffect(() => {
+    fetchActivities();
+  }, []);
+
+  const fetchActivities = async () => {
+    try {
+      const res = await fetch("/api/activity/recent");
+      const data = await res.json();
+
+      if (data.success) {
+        setActivities(data.data);
+      }
+    } catch (err) {
+      console.error("Error fetching activities:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Pagination
   const totalPages = Math.ceil(activities.length / itemsPerPage);
@@ -67,27 +35,59 @@ const PastActivitiesTable = () => {
     currentPage * itemsPerPage
   );
 
-  const getResultColor = (result) => {
-    switch(result) {
-      case 'correct':
-        return 'text-emerald-600';
-      case 'incorrect':
-        return 'text-rose-600';
-      default:
-        return 'text-gray-600';
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
+
+    if (diffInHours < 24) {
+      return `Today, ${date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })}`;
+    } else if (diffInHours < 48) {
+      return `Yesterday, ${date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })}`;
+    } else {
+      const daysAgo = Math.floor(diffInHours / 24);
+      return `${daysAgo} days ago, ${date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })}`;
     }
   };
 
-  const getResultIcon = (result) => {
-    switch(result) {
-      case 'correct':
-        return <FaCheck size={16} className="text-emerald-600" />;
-      case 'incorrect':
-        return <FaTimes size={16} className="text-rose-600" />;
-      default:
-        return null;
-    }
+  const formatDuration = (seconds) => {
+    if (!seconds) return "0s";
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return remainingSeconds > 0
+      ? `${minutes}m ${remainingSeconds}s`
+      : `${minutes}m`;
   };
+
+  if (loading) {
+    return (
+      <div className="w-full bg-white rounded-xl border border-gray-200 p-8">
+        <div className="flex items-center justify-center">
+          <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
+  if (activities.length === 0) {
+    return (
+      <div className="w-full bg-white rounded-xl border border-gray-200 p-8">
+        <p className="text-center text-gray-500">
+          No recent activity yet. Start solving questions!
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">
@@ -105,33 +105,25 @@ const PastActivitiesTable = () => {
               <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
                 Topic
               </th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
-                Result
-              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {paginatedActivities.map((item) => (
               <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4 text-sm text-gray-600">
-                  {item.date}
+                  {formatDate(item.created_at)}
                 </td>
                 <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                  {item.activity}
+                  {item.activity_type === "question_solved"
+                    ? "Solved question"
+                    : item.activity_type === "worksheet_generated"
+                    ? "Generated worksheet"
+                    : item.activity_type === "deep_work_session"
+                    ? "Deep work session"
+                    : item.activity_type}
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-700">
-                  {item.topic}
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    {getResultIcon(item.result)}
-                    <span className={`text-sm font-medium ${getResultColor(item.result)}`}>
-                      {item.result}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      ({item.time})
-                    </span>
-                  </div>
+                  {item.topic || "General"}
                 </td>
               </tr>
             ))}
@@ -140,25 +132,27 @@ const PastActivitiesTable = () => {
       </div>
 
       {/* Pagination controls */}
-      <div className="mt-4 flex items-center justify-between">
-        <button
-          className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-          disabled={currentPage === 1}
-        >
-          Previous
-        </button>
-        <span className="text-sm text-gray-600">
-          Page {currentPage} of {totalPages}
-        </span>
-        <button
-          className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-          disabled={currentPage === totalPages}
-        >
-          Next
-        </button>
-      </div>
+      {totalPages > 1 && (
+        <div className="mt-4 flex items-center justify-between">
+          <button
+            className="cursor-pointer px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </button>
+          <span className="text-sm text-gray-600">
+            Page {currentPage} of {totalPages}
+          </span>
+          <button
+            className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 };

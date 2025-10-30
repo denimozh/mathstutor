@@ -13,6 +13,12 @@ const SolvePage = () => {
   const [topic, setTopic] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  
+  // New states for OCR verification
+  const [showVerification, setShowVerification] = useState(false);
+  const [extractedText, setExtractedText] = useState("");
+  const [ocrConfidence, setOcrConfidence] = useState(1.0);
+  const [imageUrl, setImageUrl] = useState("");
 
   const topics = [
     "Algebra",
@@ -134,13 +140,13 @@ const SolvePage = () => {
                     className="cursor-pointer flex flex-col items-center"
                   >
                     <div className="bg-indigo-100 p-4 rounded-full mb-4">
-                      <FaUpload className="text-violet-600 text-3xl" />
+                      <FaUpload className="text-indigo-600 text-3xl" />
                     </div>
                     <p className="text-lg font-semibold text-gray-900 mb-2">
                       Click to upload an image
                     </p>
                     <p className="text-sm text-gray-500">
-                      PNG, JPG, JPEG up to 5MB
+                      PNG, JPG, JPEG up to 10MB
                     </p>
                   </label>
                 </div>
@@ -173,9 +179,9 @@ const SolvePage = () => {
                     key={t}
                     type="button"
                     onClick={() => setTopic(t)}
-                    className={`cursor-pointer px-4 py-3 rounded-lg font-medium transition-all ${
+                    className={`px-4 py-3 rounded-lg font-medium transition-all ${
                       topic === t
-                        ? "bg-violet-600 text-white shadow-md"
+                        ? "bg-indigo-600 text-white shadow-md"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                     }`}
                   >
@@ -196,7 +202,7 @@ const SolvePage = () => {
             <button
               type="submit"
               disabled={loading || !selectedImage || !topic}
-              className="w-full cursor-pointer bg-violet-600 text-white py-4 rounded-lg font-semibold text-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-3"
+              className="w-full bg-indigo-600 text-white py-4 rounded-lg font-semibold text-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-3"
             >
               {loading ? (
                 <>

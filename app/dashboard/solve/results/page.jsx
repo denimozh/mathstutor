@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Sidebar from "@/app/components/Sidebar";
 import Bottombar from "@/app/components/Bottombar";
-import { FaCheckCircle, FaTimesCircle, FaLightbulb, FaArrowLeft, FaEdit } from "react-icons/fa";
 
 const SolveResultsPage = () => {
   const searchParams = useSearchParams();
@@ -17,6 +16,53 @@ const SolveResultsPage = () => {
   const [isCorrect, setIsCorrect] = useState(null);
   const [struggled, setStruggled] = useState(false);
 
+  const fetchQuestionAndSolution = async () => {
+  try {
+    // Fetch question
+    const res = await fetch(`/api/question/${questionId}`);
+    const data = await res.json();
+
+    if (data.success) {
+      setQuestion(data.data);
+      setStruggled(data.data.struggled || false);
+      setIsCorrect(data.data.is_correct);
+      
+      // Check if AI solution already exists
+      if (data.data.ai_solution) {
+        setSolution(data.data.ai_solution);
+      } else {
+        // Generate AI solution
+        await generateAISolution(data.data);
+      }
+    }
+  } catch (err) {
+    console.error("Error fetching question:", err);
+  } finally {
+    setLoading(false);
+  }
+};
+
+const generateAISolution = async (question) => {
+  try {
+    const res = await fetch('/api/solutions/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        questionId: question.id,
+        extractedText: question.text,
+        topic: question.topic
+      })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      setSolution(data.solution);
+    }
+  } catch (err) {
+    console.error('Error generating solution:', err);
+  }
+};
+
   useEffect(() => {
     if (!questionId) {
       router.push("/dashboard/solve");
@@ -24,58 +70,6 @@ const SolveResultsPage = () => {
     }
     fetchQuestionAndSolution();
   }, [questionId, router]);
-
-  const fetchQuestionAndSolution = async () => {
-    try {
-      // Fetch the question details
-      const res = await fetch(`/api/question/${questionId}`);
-      const data = await res.json();
-
-      if (data.success) {
-        setQuestion(data.data);
-        setStruggled(data.data.struggled || false);
-        setIsCorrect(data.data.is_correct);
-        
-        // TODO: In Step 5, this will be replaced with actual AI solution
-        // For now, use dummy data
-        setSolution({
-          steps: [
-            {
-              step: 1,
-              title: "Identify the problem type",
-              explanation: "This is a differentiation problem. We need to find the derivative of the given function.",
-              formula: "d/dx[x²] = 2x"
-            },
-            {
-              step: 2,
-              title: "Apply the power rule",
-              explanation: "Using the power rule, we bring down the exponent and reduce it by 1.",
-              formula: "f'(x) = 2x"
-            },
-            {
-              step: 3,
-              title: "Simplify the result",
-              explanation: "The derivative is already in its simplest form.",
-              formula: "Final answer: f'(x) = 2x"
-            }
-          ],
-          final_answer: "f'(x) = 2x",
-          confidence: 0.95,
-          topic: data.data.topic || "Mathematics",
-          difficulty: data.data.difficulty || "medium",
-          hints: [
-            "Remember to apply the power rule for each term",
-            "Don't forget to handle constant terms separately",
-            "Check your work by differentiating the result"
-          ]
-        });
-      }
-    } catch (err) {
-      console.error("Error fetching question:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleMarkStruggled = async (didStruggle) => {
     try {

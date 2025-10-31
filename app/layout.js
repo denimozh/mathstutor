@@ -1,5 +1,6 @@
 import "./globals.css";
 import { Poppins } from 'next/font/google';
+import 'katex/dist/katex.min.css';
 
 const poppins = Poppins({
   subsets: ['latin'],           // include only needed character sets

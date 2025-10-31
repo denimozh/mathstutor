@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { FaArrowLeft, FaEdit, FaCheckCircle, FaLightbulb } from 'react-icons/fa';
 import Sidebar from "@/app/components/Sidebar";
 import Bottombar from "@/app/components/Bottombar";
 

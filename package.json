@@ -13,6 +13,8 @@
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.76.1",
     "katex": "^0.16.25",
+    "mathjs": "^15.0.0",
+    "mathsjs": "^1.4.0",
     "next": "16.0.0",
     "openai": "^6.7.0",
     "react": "19.2.0",

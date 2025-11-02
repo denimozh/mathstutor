@@ -112,7 +112,7 @@ export default async function Page() {
             <div className='flex flex-col lg:flex-row gap-4 w-full'>
               <Link 
                 href={"/dashboard/solve"} 
-                className='group w-full lg:w-1/3 flex flex-col justify-between border border-green-500 bg-green-300 hover:bg-green-400 transition-all duration-200 rounded-xl p-5'
+                className='group w-full lg:w-1/2 flex flex-col justify-between border border-green-500 bg-green-300 hover:bg-green-400 transition-all duration-200 rounded-xl p-5'
               >
                 <div className='flex flex-row justify-between items-center'>
                   <p className='font-semibold text-lg'>Solve Question</p>
@@ -123,24 +123,13 @@ export default async function Page() {
               
               <Link 
                 href={"/dashboard/worksheet"} 
-                className='group w-full lg:w-1/3 flex flex-col justify-between border border-blue-500 bg-blue-300 hover:bg-blue-400 transition-all duration-200 rounded-xl p-5'
+                className='group w-full lg:w-1/2 flex flex-col justify-between border border-blue-500 bg-blue-300 hover:bg-blue-400 transition-all duration-200 rounded-xl p-5'
               >
                 <div className='flex flex-row justify-between items-center'>
                   <p className='font-semibold text-lg'>Generate Practice</p>
                   <FaFileAlt className='bg-white p-2 rounded-full w-8 h-8 text-blue-500 group-hover:text-blue-400 transition-all duration-200'/>
                 </div>
                 <p className='text-sm text-blue-800 mt-2'>Smart worksheets for weak topics</p>
-              </Link>
-              
-              <Link 
-                href={"/dashboard/deepwork"} 
-                className='group w-full lg:w-1/3 flex flex-col justify-between border border-amber-500 bg-amber-300 hover:bg-amber-400 transition-all duration-200 rounded-xl p-5'
-              >
-                <div className='flex flex-row justify-between items-center'>
-                  <p className='font-semibold text-lg'>Start Deep Work</p>
-                  <FaCentos className='bg-white p-2 rounded-full w-8 h-8 text-amber-500 group-hover:text-amber-400 transition-all duration-200'/>
-                </div>
-                <p className='text-sm text-amber-800 mt-2'>45 min focus session ready</p>
               </Link>
             </div>
 

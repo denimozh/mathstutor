@@ -25,7 +25,6 @@ const Sidebar = () => {
           <SidebarItem icon={<FaWandMagicSparkles />} text="Tutor" link="/dashboard/solve" />
           <SidebarItem icon={<FaFileAlt />} text="Worksheets" link="/dashboard/worksheet" />
           <SidebarItem icon={<FaCalendarAlt />} text="Revision" link="/dashboard/revision" />
-          <SidebarItem icon={<FaPenFancy />} text="Deepwork" link="/dashboard/deepwork" />
         </div>
 
         <div className='flex flex-col gap-2'>

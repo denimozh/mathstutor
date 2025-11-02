@@ -18,7 +18,6 @@ const Bottombar = () => {
       <BottomBarItem icon={<FaWandMagicSparkles />} link="/dashboard/solve" />
       <BottomBarItem icon={<FaFileAlt />} link="/dashboard/worksheet" />
       <BottomBarItem icon={<FaCalendarAlt />} link="/dashboard/revision" />
-      <BottomBarItem icon={<FaPenFancy />} link="/dashboard/deepwork" />
       <BottomBarItem icon={<FaHistory />} link="/dashboard/history" />
       <BottomBarItem icon={<FaGear />} link="/dashboard/settings" />
     </div>

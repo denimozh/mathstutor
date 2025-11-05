@@ -14,6 +14,21 @@ export async function POST(request) {
     const manualText = formData.get('manualText'); // Optional: user-edited text
     const manualLatex = formData.get('manualLatex'); // Optional: user-edited LaTeX
 
+    // Validation
+    if (!imageFile || !(imageFile instanceof File)) {
+      return Response.json(
+        { success: false, message: 'No image file provided' },
+        { status: 400 }
+      );
+    }
+
+    if (!topic) {
+      return Response.json(
+        { success: false, message: 'Topic is required' },
+        { status: 400 }
+      );
+    }
+
     const supabase = await createClient();
     
     const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -21,11 +36,14 @@ export async function POST(request) {
     const userId = user.id;
 
     console.log('📤 Processing question for user:', userId);
+    console.log('📎 Image file:', imageFile.name, imageFile.size, 'bytes');
 
     // 1️⃣ Upload image to storage
     const timestamp = Date.now();
     const fileName = `${timestamp}-${imageFile.name}`;
     const filePath = `${userId}/${fileName}`;
+    
+    console.log('📁 Uploading to path:', filePath);
     
     const { data: storageData, error: storageError } = await supabase.storage
       .from('questions-images')

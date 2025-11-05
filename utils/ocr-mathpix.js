@@ -32,16 +32,20 @@ export async function extractTextFromImage(imageFile) {
       },
       body: JSON.stringify({
         src: `data:image/jpeg;base64,${base64Image}`,
-        formats: ['text', 'latex_styled', 'asciimath'],
+        formats: ['text', 'latex_styled'],
         ocr: ['math', 'text'],
         skip_recrop: false,
-        enable_formula_detection: true,
-        // Options for better handwriting recognition
+        include_asciimath: true,
+        include_latex: true,
+        include_mathml: false,
+        include_tsv: false,
+        include_svg: false,
+        include_table_html: false,
+        include_line_data: false,
+        include_word_data: false,
         alphabets_allowed: 'en',
         math_inline_delimiters: ['$', '$'],
         math_display_delimiters: ['$$', '$$'],
-        rm_spaces: true, // Remove extra spaces in math
-        rm_fonts: false, // Keep font information
       }),
     });
 

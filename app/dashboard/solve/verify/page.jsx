@@ -7,7 +7,7 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Sidebar from "@/app/components/Sidebar";
 import Bottombar from "@/app/components/Bottombar";
-import { HandwrittenWorkDisplay } from "@/app/components/CleanMathDisplay";
+import { HandwrittenWorkDisplay } from "@/app/components/MathDisplay";
 import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
 
@@ -43,6 +43,11 @@ export default function VerifyPage() {
       return;
     }
 
+    if (!topic) {
+      alert("Please select a topic");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -50,11 +55,19 @@ export default function VerifyPage() {
       
       // Create a new File object from the stored image data if available
       if (ocrData?.imageUrl) {
-        // Fetch the image and create a File object
-        const response = await fetch(ocrData.imageUrl);
-        const blob = await response.blob();
-        const file = new File([blob], 'question.jpg', { type: 'image/jpeg' });
-        formData.append('image', file);
+        try {
+          // Fetch the image and create a File object
+          const response = await fetch(ocrData.imageUrl);
+          const blob = await response.blob();
+          const file = new File([blob], 'question.jpg', { type: blob.type || 'image/jpeg' });
+          formData.append('image', file);
+          console.log('📎 Image attached:', file.name, file.size, 'bytes');
+        } catch (imgError) {
+          console.error('Error fetching image:', imgError);
+          throw new Error('Failed to load image. Please try uploading again.');
+        }
+      } else {
+        throw new Error('No image URL available');
       }
 
       formData.append('manualText', editedText);

@@ -4,8 +4,10 @@
 'use client';
 
 import { InlineMath, BlockMath } from 'react-katex';
-import { cleanLatex, CleanMathStep } from './CleanMathDisplay';
 import 'katex/dist/katex.min.css';
+
+// Import from CleanMathDisplay
+import { CleanMathStep, cleanLatex } from './CleanMathDisplay';
 
 /**
  * Complete marked solution display

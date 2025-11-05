@@ -21,7 +21,7 @@ export async function extractTextFromImage(imageFile) {
     const base64Image = enhancedBuffer.toString('base64');
     console.log('✅ Image preprocessed');
 
-    // Call Mathpix API
+    // Call Mathpix API with minimal, working configuration
     console.log('🌐 Calling Mathpix API...');
     const response = await fetch('https://api.mathpix.com/v3/text', {
       method: 'POST',
@@ -32,20 +32,7 @@ export async function extractTextFromImage(imageFile) {
       },
       body: JSON.stringify({
         src: `data:image/jpeg;base64,${base64Image}`,
-        formats: ['text', 'latex_styled'],
-        ocr: ['math', 'text'],
-        skip_recrop: false,
-        include_asciimath: true,
-        include_latex: true,
-        include_mathml: false,
-        include_tsv: false,
-        include_svg: false,
-        include_table_html: false,
-        include_line_data: false,
-        include_word_data: false,
-        alphabets_allowed: 'en',
-        math_inline_delimiters: ['$', '$'],
-        math_display_delimiters: ['$$', '$$'],
+        formats: ['text', 'latex_styled']
       }),
     });
 

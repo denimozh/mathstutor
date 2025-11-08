@@ -20,6 +20,24 @@ const EXAMPLE_QUESTIONS = [
   TOY_OPTIMIZATION_EXAMPLE
 ];
 
+// Add this helper function at the top of utils/ai.js
+function ensureVerificationHasContent(verification) {
+  if (!verification) return null;
+  
+  // If verification exists but has empty/invalid method, return null
+  if (!verification.method || 
+      verification.method === '' || 
+      verification.method === 'N/A' ||
+      verification.method.toLowerCase() === 'n/a') {
+    return null;
+  }
+  
+  return verification;
+}
+
+// Then in your generateSolution function, wrap verification:
+solution.verification = ensureVerificationHasContent(solution.verification);
+
 // Enhanced A-Level Math Tutor System Prompt
 const MATH_TUTOR_SYSTEM_PROMPT = `You are an expert A-Level mathematics tutor with deep knowledge of:
 - Pure Mathematics (Algebra, Calculus, Trigonometry, Functions)

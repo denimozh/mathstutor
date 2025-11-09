@@ -7,7 +7,7 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Sidebar from "@/app/components/Sidebar";
 import Bottombar from "@/app/components/Bottombar";
-import { HandwrittenWorkDisplay } from "@/app/components/CleanMathDisplay";
+import { HandwrittenWorkDisplay } from "@/app/components/MathDisplay";
 import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
 

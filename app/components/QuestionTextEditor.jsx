@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import MathDisplay from './CleanMathDisplay';
+import MathDisplay from './MathDisplay';
 
 export default function QuestionTextEditor({ initialText, onSave, imageUrl }) {
   const [lines, setLines] = useState([]);
@@ -9,36 +9,140 @@ export default function QuestionTextEditor({ initialText, onSave, imageUrl }) {
 
   useEffect(() => {
     if (initialText) {
-      const parsed = parseQuestionText(initialText);
+      const cleaned = cleanMathpixOutput(initialText);
+      const parsed = parseQuestionText(cleaned);
       setLines(parsed);
     }
   }, [initialText]);
 
+  // Clean Mathpix output
+  const cleanMathpixOutput = (text) => {
+    let cleaned = text;
+    
+    // Remove array environments
+    cleaned = cleaned.replace(/\\begin\{array\}\{[^}]*\}/g, '');
+    cleaned = cleaned.replace(/\\end\{array\}/g, '');
+    
+    // Remove aligned environments
+    cleaned = cleaned.replace(/\\begin\{aligned\}/g, '');
+    cleaned = cleaned.replace(/\\end\{aligned\}/g, '');
+    
+    // Clean up left/right
+    cleaned = cleaned.replace(/\\left\(/g, '(');
+    cleaned = cleaned.replace(/\\right\)/g, ')');
+    cleaned = cleaned.replace(/\\left\[/g, '[');
+    cleaned = cleaned.replace(/\\right\]/g, ']');
+    
+    return cleaned;
+  };
+
   const parseQuestionText = (text) => {
-    const rawLines = text.split(/\\\\|\n/);
-    return rawLines.map((line, idx) => ({
-      id: idx,
-      content: line.trim(),
-      type: detectLineType(line)
-    })).filter(line => line.content);
+    const rawLines = text.split(/\n|\\\\/).filter(l => l.trim());
+    
+    return rawLines.map((line, idx) => {
+      const trimmed = line.trim();
+      return {
+        id: idx,
+        content: trimmed,
+        type: detectLineType(trimmed),
+        readable: makeReadable(trimmed)
+      };
+    });
   };
 
   const detectLineType = (line) => {
     if (line.includes('\\frac')) return 'fraction';
+    if (line.includes('\\sqrt')) return 'surd';
     if (line.includes('\\sin') || line.includes('\\cos') || line.includes('\\tan')) return 'trig';
     if (line.includes('=')) return 'equation';
     if (line.includes('\\text')) return 'text';
     return 'math';
   };
 
+  const makeReadable = (latex) => {
+    let readable = latex;
+    
+    // Convert fractions: \frac{a}{b} -> (a)/(b)
+    readable = readable.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1)/($2)');
+    
+    // Convert nested fractions more carefully
+    let iterations = 0;
+    while (readable.includes('\\frac') && iterations < 5) {
+      readable = readable.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1)/($2)');
+      iterations++;
+    }
+    
+    // Convert surds: \sqrt{x} -> √(x)
+    readable = readable.replace(/\\sqrt\{([^}]+)\}/g, '√($1)');
+    
+    // Common Greek letters
+    readable = readable.replace(/\\theta/g, 'θ');
+    readable = readable.replace(/\\alpha/g, 'α');
+    readable = readable.replace(/\\beta/g, 'β');
+    readable = readable.replace(/\\gamma/g, 'γ');
+    readable = readable.replace(/\\delta/g, 'δ');
+    
+    // Trig functions
+    readable = readable.replace(/\\sin/g, 'sin');
+    readable = readable.replace(/\\cos/g, 'cos');
+    readable = readable.replace(/\\tan/g, 'tan');
+    
+    // Other symbols
+    readable = readable.replace(/\\equiv/g, '≡');
+    readable = readable.replace(/\\approx/g, '≈');
+    readable = readable.replace(/\\neq/g, '≠');
+    readable = readable.replace(/\\leq/g, '≤');
+    readable = readable.replace(/\\geq/g, '≥');
+    
+    // Remove remaining LaTeX commands
+    readable = readable.replace(/\\text\{([^}]+)\}/g, '$1');
+    
+    return readable;
+  };
+
+  const makeLatex = (readable) => {
+    let latex = readable;
+    
+    // Convert fractions back
+    latex = latex.replace(/\(([^)]+)\)\/\(([^)]+)\)/g, '\\frac{$1}{$2}');
+    
+    // Convert surds back
+    latex = latex.replace(/√\(([^)]+)\)/g, '\\sqrt{$1}');
+    
+    // Greek letters back
+    latex = latex.replace(/θ/g, '\\theta');
+    latex = latex.replace(/α/g, '\\alpha');
+    latex = latex.replace(/β/g, '\\beta');
+    latex = latex.replace(/γ/g, '\\gamma');
+    latex = latex.replace(/δ/g, '\\delta');
+    
+    // Symbols back
+    latex = latex.replace(/≡/g, '\\equiv');
+    latex = latex.replace(/≈/g, '\\approx');
+    latex = latex.replace(/≠/g, '\\neq');
+    latex = latex.replace(/≤/g, '\\leq');
+    latex = latex.replace(/≥/g, '\\geq');
+    
+    return latex;
+  };
+
   const updateLine = (id, newContent) => {
     setLines(lines.map(line => 
-      line.id === id ? { ...line, content: newContent } : line
+      line.id === id ? { 
+        ...line, 
+        readable: newContent,
+        content: makeLatex(newContent)
+      } : line
     ));
   };
 
   const addLine = () => {
-    setLines([...lines, { id: lines.length, content: '', type: 'math' }]);
+    setLines([...lines, {
+      id: lines.length,
+      content: '',
+      readable: '',
+      type: 'math'
+    }]);
   };
 
   const removeLine = (id) => {
@@ -54,6 +158,7 @@ export default function QuestionTextEditor({ initialText, onSave, imageUrl }) {
   const getLineIcon = (type) => {
     switch(type) {
       case 'fraction': return '➗';
+      case 'surd': return '√';
       case 'trig': return '📐';
       case 'equation': return '=';
       case 'text': return '📝';
@@ -107,10 +212,10 @@ export default function QuestionTextEditor({ initialText, onSave, imageUrl }) {
               <div className="flex-1 flex gap-2">
                 <input
                   type="text"
-                  value={line.content}
+                  value={line.readable}
                   onChange={(e) => updateLine(line.id, e.target.value)}
-                  placeholder="Enter equation or text..."
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono text-sm"
+                  placeholder="Enter equation... e.g., (a+b)/(c-d)"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
                 />
                 <button
                   onClick={() => removeLine(line.id)}
@@ -140,9 +245,15 @@ export default function QuestionTextEditor({ initialText, onSave, imageUrl }) {
       {editing && (
         <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
           <p className="text-sm text-blue-800">
-            <strong>💡 Tip:</strong> Use LaTeX notation like \frac{'{1}'}{'{2}'} for fractions, 
-            \sin, \cos for trig functions, and x^{'{2}'} for powers.
+            <strong>💡 Quick Guide:</strong>
           </p>
+          <ul className="text-xs text-blue-700 mt-2 space-y-1">
+            <li>• Fractions: (numerator)/(denominator)</li>
+            <li>• Square roots: √(expression)</li>
+            <li>• Use θ for theta, α for alpha, β for beta</li>
+            <li>• Powers: x^2 for x², x^(n+1) for x^(n+1)</li>
+            <li>• Symbols: ≈ ≠ ≤ ≥ ≡</li>
+          </ul>
         </div>
       )}
     </div>

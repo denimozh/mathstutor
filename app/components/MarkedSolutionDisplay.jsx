@@ -7,7 +7,7 @@ import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
 
 // Import from CleanMathDisplay
-import { CleanMathStep, cleanLatex } from './CleanMathDisplay';
+import { CleanMathStep, cleanLatex } from './MathDisplay';
 
 /**
  * Complete marked solution display

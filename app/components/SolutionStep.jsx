@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import MathDisplay from './CleanMathDisplay';
+import MathDisplay from './MathDisplay';
 
 export default function SolutionStep({ step, index }) {
   const renderWorking = (working) => {

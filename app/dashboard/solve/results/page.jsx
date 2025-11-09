@@ -13,7 +13,7 @@ import {
 } from 'react-icons/fa';
 import Sidebar from "@/app/components/Sidebar";
 import Bottombar from "@/app/components/Bottombar";
-import MathDisplay from "@/app/components/CleanMathDisplay";
+import MathDisplay from "@/app/components/MathDisplay";
 import QuestionTextEditor from "@/app/components/QuestionTextEditor";
 import SolutionStep from "@/app/components/SolutionStep";
 

@@ -1,27 +1,17 @@
-// utils/ocr-mathpix.js
-// REPLACE utils/ocr-google-vision.js with this file
-
 import sharp from 'sharp';
 
-/**
- * Extract mathematical text from image using Mathpix OCR
- * This is specialized for handwritten math and produces LaTeX output
- */
 export async function extractTextFromImage(imageFile) {
   try {
     console.log('🔍 Starting OCR with Mathpix...');
     
-    // Convert image file to buffer
     const arrayBuffer = await imageFile.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Preprocess image for better OCR
     console.log('🎨 Preprocessing image...');
     const enhancedBuffer = await preprocessImageForMath(buffer);
     const base64Image = enhancedBuffer.toString('base64');
     console.log('✅ Image preprocessed');
 
-    // Call Mathpix API with minimal, working configuration
     console.log('🌐 Calling Mathpix API...');
     const response = await fetch('https://api.mathpix.com/v3/text', {
       method: 'POST',
@@ -43,41 +33,35 @@ export async function extractTextFromImage(imageFile) {
     }
 
     const data = await response.json();
-    console.log('📡 Mathpix response:', JSON.stringify(data, null, 2));
+    console.log('📡 Mathpix response received');
 
-    // Check for errors in response
     if (data.error) {
       throw new Error(`Mathpix error: ${data.error}`);
     }
 
-    // Extract results
     const extractedText = data.text || '';
     const latexStyled = data.latex_styled || '';
     const confidence = data.confidence || 0;
-    const detectionMap = data.detection_map || {};
 
     console.log('✅ OCR completed');
     console.log('📝 Extracted text:', extractedText);
-    console.log('📐 LaTeX:', latexStyled);
     console.log('📊 Confidence:', confidence);
 
-    // Parse the LaTeX to create structured steps
-    const structuredSteps = parseLatexIntoSteps(latexStyled, extractedText);
+    // IMPORTANT: Clean the LaTeX output
+    const cleanedLatex = cleanMathpixLatex(latexStyled);
+    const structuredSteps = parseLatexIntoSteps(cleanedLatex, extractedText);
 
     return {
       text: extractedText,
-      latex: latexStyled,
+      latex: cleanedLatex, // Return cleaned version
       confidence: confidence,
       raw: data,
       structuredSteps: structuredSteps,
-      detectionMap: detectionMap
     };
 
   } catch (error) {
     console.error('❌ OCR extraction failed:', error);
-    console.error('Error details:', error.message);
     
-    // Return empty result with low confidence instead of throwing
     return {
       text: '',
       latex: '',
@@ -90,30 +74,55 @@ export async function extractTextFromImage(imageFile) {
 }
 
 /**
- * Preprocess image specifically for math OCR
+ * Clean Mathpix LaTeX output - Remove problematic environments
  */
+function cleanMathpixLatex(latex) {
+  if (!latex) return '';
+  
+  let cleaned = latex;
+  
+  // Remove \begin{array} and \end{array} with their parameters
+  cleaned = cleaned.replace(/\\begin\{array\}\{[^}]*\}/g, '');
+  cleaned = cleaned.replace(/\\end\{array\}/g, '');
+  
+  // Remove \begin{aligned} and \end{aligned}
+  cleaned = cleaned.replace(/\\begin\{aligned\}/g, '');
+  cleaned = cleaned.replace(/\\end\{aligned\}/g, '');
+  
+  // Remove excessive \left and \right
+  cleaned = cleaned.replace(/\\left\(/g, '(');
+  cleaned = cleaned.replace(/\\right\)/g, ')');
+  cleaned = cleaned.replace(/\\left\[/g, '[');
+  cleaned = cleaned.replace(/\\right\]/g, ']');
+  cleaned = cleaned.replace(/\\left\{/g, '{');
+  cleaned = cleaned.replace(/\\right\}/g, '}');
+  
+  // Clean up multiple backslashes (line breaks)
+  cleaned = cleaned.replace(/\\\\\s*/g, '\n');
+  
+  // Remove display math delimiters if present
+  cleaned = cleaned.replace(/\\\[/g, '');
+  cleaned = cleaned.replace(/\\\]/g, '');
+  
+  // Trim whitespace
+  cleaned = cleaned.trim();
+  
+  return cleaned;
+}
+
 async function preprocessImageForMath(buffer) {
   try {
-    // Mathpix works best with:
-    // - High contrast (black on white)
-    // - Sharp edges
-    // - Moderate resolution (not too high, not too low)
     const enhancedBuffer = await sharp(buffer)
       .resize(2000, 2000, {
         fit: 'inside',
         withoutEnlargement: true,
       })
-      // Convert to grayscale for better recognition
       .grayscale()
-      // Increase contrast
       .normalize()
-      // Sharpen edges
       .sharpen()
-      // Slight brightness adjustment
       .modulate({
         brightness: 1.1,
       })
-      // Output as JPEG (Mathpix prefers JPEG)
       .jpeg({ quality: 95 })
       .toBuffer();
 
@@ -124,28 +133,20 @@ async function preprocessImageForMath(buffer) {
   }
 }
 
-/**
- * Parse LaTeX into structured steps for clean display
- */
 function parseLatexIntoSteps(latex, plainText) {
   if (!latex) return [];
 
   const steps = [];
-  
-  // Split by common step indicators
-  const lines = latex.split(/\\\\|\n/).filter(line => line.trim());
+  const lines = latex.split(/\n/).filter(line => line.trim());
   
   lines.forEach((line, index) => {
     const trimmed = line.trim();
     if (!trimmed) return;
 
-    // Detect if this is an equation (contains =)
     const isEquation = trimmed.includes('=');
     
-    // Clean up LaTeX formatting
     const cleaned = trimmed
-      .replace(/\\text\{([^}]+)\}/g, '$1') // Remove \text{}
-      .replace(/\\left|\\right/g, '') // Remove \left \right
+      .replace(/\\text\{([^}]+)\}/g, '$1')
       .trim();
 
     steps.push({
@@ -159,9 +160,6 @@ function parseLatexIntoSteps(latex, plainText) {
   return steps;
 }
 
-/**
- * Verify Mathpix API credentials
- */
 export async function verifyMathpixCredentials() {
   try {
     const response = await fetch('https://api.mathpix.com/v3/app_info', {

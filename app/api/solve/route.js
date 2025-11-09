@@ -1,8 +1,5 @@
-// app/api/solve/route.js
-// REPLACE EXISTING FILE - Now uses Mathpix OCR
-
 import { createClient } from "@/utils/supabase/server.js";
-import { extractTextFromImage } from "@/utils/ocr-mathpix"; // Changed from google-vision
+import { extractTextFromImage } from "@/utils/ocr-mathpix"; // ← Changed import
 
 export async function POST(request) {
   try {
@@ -10,21 +7,11 @@ export async function POST(request) {
 
     const imageFile = formData.get('image');
     const topic = formData.get('topic');
-    const struggled = formData.get('struggled') === 'true';
-    const manualText = formData.get('manualText'); // Optional: user-edited text
-    const manualLatex = formData.get('manualLatex'); // Optional: user-edited LaTeX
+    const manualText = formData.get('manualText');
 
-    // Validation
-    if (!imageFile || !(imageFile instanceof File)) {
+    if (!imageFile) {
       return Response.json(
-        { success: false, message: 'No image file provided' },
-        { status: 400 }
-      );
-    }
-
-    if (!topic) {
-      return Response.json(
-        { success: false, message: 'Topic is required' },
+        { success: false, message: 'No image provided' },
         { status: 400 }
       );
     }
@@ -32,18 +19,20 @@ export async function POST(request) {
     const supabase = await createClient();
     
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) throw new Error(userError?.message || 'User not authenticated');
+    if (userError || !user) {
+      return Response.json(
+        { success: false, message: 'User not authenticated' },
+        { status: 401 }
+      );
+    }
+    
     const userId = user.id;
-
     console.log('📤 Processing question for user:', userId);
-    console.log('📎 Image file:', imageFile.name, imageFile.size, 'bytes');
 
-    // 1️⃣ Upload image to storage
+    // 1️⃣ Upload image
     const timestamp = Date.now();
     const fileName = `${timestamp}-${imageFile.name}`;
     const filePath = `${userId}/${fileName}`;
-    
-    console.log('📁 Uploading to path:', filePath);
     
     const { data: storageData, error: storageError } = await supabase.storage
       .from('questions-images')
@@ -60,50 +49,40 @@ export async function POST(request) {
 
     console.log('✅ Image uploaded:', publicUrl);
 
-    // 2️⃣ Extract text using Mathpix OCR (unless manually provided)
+    // 2️⃣ Extract text using Mathpix OCR
     let extractedText;
-    let extractedLatex;
-    let structuredSteps;
     let ocrConfidence = 1.0;
 
-    if (manualText && manualLatex) {
-      // User edited the text - use their version
+    if (manualText) {
       extractedText = manualText;
-      extractedLatex = manualLatex;
-      console.log('📝 Using manually edited text and LaTeX');
+      console.log('📝 Using manually edited text');
     } else {
-      // Run Mathpix OCR
-      console.log('🔍 Running OCR with Mathpix...');
+      console.log('🔍 Running Mathpix OCR...');
       const ocrResult = await extractTextFromImage(imageFile);
-      extractedText = ocrResult.text;
-      extractedLatex = ocrResult.latex;
-      structuredSteps = ocrResult.structuredSteps;
+      
+      // Use the cleaned LaTeX from Mathpix
+      extractedText = ocrResult.latex || ocrResult.text;
       ocrConfidence = ocrResult.confidence;
       
       console.log('✅ OCR completed');
-      console.log('📝 Extracted text:', extractedText);
-      console.log('📐 Extracted LaTeX:', extractedLatex);
+      console.log('📝 Extracted LaTeX:', extractedText);
       console.log('📊 OCR Confidence:', ocrConfidence);
     }
 
-    // If OCR confidence is low or text is empty, we'll need user to verify
     const needsVerification = ocrConfidence < 0.7 || !extractedText.trim();
 
     if (needsVerification && !manualText) {
-      // Return extracted text for user to verify/edit
       return Response.json({
         success: true,
         needsVerification: true,
         extractedText: extractedText,
-        extractedLatex: extractedLatex,
-        structuredSteps: structuredSteps,
         ocrConfidence: ocrConfidence,
         imageUrl: publicUrl,
         message: "Please verify the extracted text"
       });
     }
 
-    // 3️⃣ Insert question into database
+    // 3️⃣ Insert question
     console.log('💾 Saving question to database...');
     
     const { data: questionData, error: dbError } = await supabase
@@ -111,7 +90,7 @@ export async function POST(request) {
         p_user_id: userId,
         p_text: extractedText,
         p_topic: topic,
-        p_struggled: struggled,
+        p_struggled: false,
         p_image_url: publicUrl
       });
 
@@ -123,32 +102,31 @@ export async function POST(request) {
     const questionId = questionData[0].id;
     console.log('✅ Question saved with ID:', questionId);
 
-    // 4️⃣ Update with OCR data
+    // 4️⃣ Update confidence
     await supabase
       .from('questions')
-      .update({
-        ai_confidence: ocrConfidence,
-        latex_content: extractedLatex,
-        structured_steps: structuredSteps
-      })
+      .update({ ai_confidence: ocrConfidence })
       .eq('id', questionId);
 
-    // Return question ID to navigate to results
     return Response.json({
       success: true,
       needsVerification: false,
       questionId: questionId,
       extractedText: extractedText,
-      extractedLatex: extractedLatex,
-      structuredSteps: structuredSteps,
       ocrConfidence: ocrConfidence,
       message: "Question uploaded successfully"
     });
 
   } catch (error) {
     console.error('❌ Solve route error:', error);
+    
+    // Proper JSON error
     return Response.json(
-      { success: false, message: error.message },
+      { 
+        success: false, 
+        message: error.message || 'Failed to process question',
+        error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      },
       { status: 500 }
     );
   }
